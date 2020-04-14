@@ -25,7 +25,7 @@ SECRET_KEY = 'x8kq&vd(nymwpl=+5l=a0theppaw!k4lf)f*bxz^flzquu+qu5'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -130,3 +130,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ]
 }
+
+AUTHENTICATION_BACKENDS = (
+        'django.contrib.auth.backends.RemoteUserBackend',
+        'django.contrib.auth.backends.ModelBackend',
+)

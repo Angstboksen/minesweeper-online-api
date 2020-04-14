@@ -11,12 +11,9 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-from .serializers import SnippetSerializer
-from .serializers import UserSerializer, SnippetSerializer
-from .models import Snippet
+from .serializers import MinesweeperUserSerializer, MinesweeperGameSerializer
+from .models import MinesweeperGame, MinesweeperUser
 from .permissions import IsOwnerOrReadOnly
-
-
 
 
 
@@ -27,34 +24,30 @@ def api_root(request, format=None):
         'snippets': reverse('snippet-list', request=request, format=format)
     })
 
+class MinesweeperUserViewSet(viewsets.ModelViewSet):
+ 
+    queryset = MinesweeperUser.objects.all()
+    serializer_class = MinesweeperUserSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-class SnippetViewSet(viewsets.ModelViewSet):
-    """
-    This viewset automatically provides `list`, `create`, `retrieve`,
-    `update` and `destroy` actions.
+class MinesweeperGameViewSet(viewsets.ModelViewSet):
+ 
+    queryset = MinesweeperGame.objects.all()
+    serializer_class = MinesweeperGameSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    Additionally we also provide an extra `highlight` action.
-    """
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
-    permission_classes = [
-                          IsOwnerOrReadOnly]
+"""class HighscoreListViewSet(viewsets.ModelViewSet):
+ 
+    queryset = HighscoreList.objects.all()
+    serializer_class = HighscoreListSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
-    def highlight(self, request, *args, **kwargs):
-        snippet = self.get_object()
-        return Response(snippet.highlighted)
+class HighscoreViewSet(viewsets.ModelViewSet):
+ 
+    queryset = Highscore.objects.all()
+    serializer_class = HighscoreSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]"""
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
-
-
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    This viewset automatically provides `list` and `detail` actions.
-    """
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
 class CustomAuthToken(ObtainAuthToken):
 

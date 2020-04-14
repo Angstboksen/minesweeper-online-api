@@ -1,20 +1,17 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
+from .models import MinesweeperGame, MinesweeperUser
 
 
-class SnippetSerializer(serializers.HyperlinkedModelSerializer):
-    owner = serializers.ReadOnlyField(source='owner.username')
-    highlight = serializers.HyperlinkedIdentityField(view_name='snippet-highlight', format='html')
+class MinesweeperUserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
-        model = Snippet
-        fields = ['url', 'id', 'highlight', 'owner', 'title', 'code', 'linenos', 'language', 'style']
+        model = MinesweeperUser
+        fields = ['url', 'id','first_name', 'last_name', 'username', 'email']
 
-
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-    #snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
-
+class MinesweeperGameSerializer(serializers.HyperlinkedModelSerializer):
+    userid = serializers.ReadOnlyField(source='user.id')
+    
     class Meta:
-        model = User
-        fields = ['url', 'id', 'username', 'email', 'snippets']
+        model = MinesweeperGame
+        fields = ['url', 'id', 'user', 'userid', 'game_time', 'game_won', 'date']
