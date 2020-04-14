@@ -15,7 +15,7 @@ class MinesweeperUser(models.Model):
         is_new = True if not self.id else False
         super(MinesweeperUser, self).save(*args, **kwargs)
         if is_new:
-            authuser = auth.User(username=self.username, email=self.email, password=self.username)
+            authuser = User(username=self.username, email=self.email, password=self.username)
             authuser.save()
 
     class Meta:
@@ -29,7 +29,7 @@ class MinesweeperGame(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return str(self.user) + " : " + str(self.gametime)
+        return str(self.user) + " : " + str(self.game_time)
 
     class Meta:
         ordering = ['user']
