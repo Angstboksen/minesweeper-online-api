@@ -49,7 +49,7 @@ class SnippetViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
