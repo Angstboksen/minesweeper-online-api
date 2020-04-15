@@ -11,30 +11,115 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
+from django.views.decorators.csrf import csrf_exempt
 from .serializers import MinesweeperUserSerializer, MinesweeperGameSerializer
+from rest_framework.authentication import TokenAuthentication
 from .models import MinesweeperGame, MinesweeperUser
 from .permissions import IsOwnerOrReadOnly
+from django.http import HttpResponse, JsonResponse
+from rest_framework.parsers import JSONParser
 
 
-
+@csrf_exempt
 @api_view(['GET'])
 def api_root(request, format=None):
     return Response({
         'users': reverse('user-list', request=request, format=format),
-        'snippets': reverse('snippet-list', request=request, format=format)
+        'games': reverse('game-list', request=request, format=format)
     })
 
-class MinesweeperUserViewSet(viewsets.ModelViewSet):
- 
-    queryset = MinesweeperUser.objects.all()
-    serializer_class = MinesweeperUserSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+@csrf_exempt
+@api_view(['GET', 'POST'])
+def user_list(request, format=None):
+    """
+    List all code snippets, or create a new snippet.
+    """
+    if request.method == 'GET':
+        users = User.objects.all()
+        serializer = MinesweeperUserSerializer(users, many=True)
+        return JsonResponse(serializer.data, safe=False)
 
-class MinesweeperGameViewSet(viewsets.ModelViewSet):
- 
-    queryset = MinesweeperGame.objects.all()
-    serializer_class = MinesweeperGameSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    elif request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = MinesweeperUserSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+
+@csrf_exempt
+@api_view(['GET', 'PUT', 'DELETE'])
+def user_detail(request, pk, format=None):
+    """
+    Retrieve, update or delete a code snippet.
+    """
+    try:
+        user = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return HttpResponse(status=404)
+
+    if request.method == 'GET':
+        serializer = MinesweeperUserSerializer(user)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PUT':
+        data = JSONParser().parse(request)
+        serializer = MinesweeperUserSerializer(user, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse(serializer.errors, status=400)
+
+    elif request.method == 'DELETE':
+        user.delete()
+        return HttpResponse(status=204)
+
+@csrf_exempt
+@api_view(['GET', 'POST'])
+def game_list(request, format=None):
+    """
+    List all code snippets, or create a new snippet.
+    """
+    if request.method == 'GET':
+        games = Game.objects.all()
+        serializer = MinesweeperGameSerializer(users, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = MinesweeperGameSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=400)
+
+@csrf_exempt
+@api_view(['GET', 'PUT', 'DELETE'])
+def game_detail(request, pk, format=None):
+    """
+    Retrieve, update or delete a code snippet.
+    """
+    try:
+        game = Game.objects.get(pk=pk)
+    except Game.DoesNotExist:
+        return HttpResponse(status=404)
+
+    if request.method == 'GET':
+        serializer = MinesweeperGameSerializer(user)
+        return JsonResponse(serializer.data)
+
+    elif request.method == 'PUT':
+        data = JSONParser().parse(request)
+        serializer = MinesweeperGameSerializer(user, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse(serializer.errors, status=400)
+
+    elif request.method == 'DELETE':
+        game.delete()
+        return HttpResponse(status=204)
 
 """class HighscoreListViewSet(viewsets.ModelViewSet):
  

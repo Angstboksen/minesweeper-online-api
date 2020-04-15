@@ -3,15 +3,15 @@ from rest_framework import serializers
 from .models import MinesweeperGame, MinesweeperUser
 
 
-class MinesweeperUserSerializer(serializers.HyperlinkedModelSerializer):
+class MinesweeperUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MinesweeperUser
-        fields = ['url', 'id','first_name', 'last_name', 'username', 'email']
+        fields = ['id','first_name', 'last_name', 'username', 'email']
 
-class MinesweeperGameSerializer(serializers.HyperlinkedModelSerializer):
-    userid = serializers.ReadOnlyField(source='user.id')
+class MinesweeperGameSerializer(serializers.ModelSerializer):
+    #userid = serializers.ReadOnlyField(source='user.id')
     
     class Meta:
         model = MinesweeperGame
-        fields = ['url', 'id', 'user', 'userid', 'game_time', 'game_won', 'date']
+        fields = ['id', 'user', 'game_time', 'game_won', 'date']
