@@ -15,11 +15,10 @@ class MinesweeperUser(models.Model):
         is_new = True if not self.id else False
         super(MinesweeperUser, self).save(*args, **kwargs)
         if is_new:
-            authuser = User(username=self.username, email=self.email)
+            authuser = User(username=self.username, email=self.email,
+                            first_name=self.first_name, last_name=self.last_name)
+            authuser.set_password(self.username)
             authuser.save()
-
-        #permission for minesweeperusers (set owner for bruker)
-        #sortering av games i views
 
     class Meta:
         ordering = ['id']

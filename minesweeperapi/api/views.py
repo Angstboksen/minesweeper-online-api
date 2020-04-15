@@ -1,7 +1,9 @@
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets
 from rest_framework import permissions
 from rest_framework import generics
@@ -11,14 +13,14 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-from rest_framework.views import APIView
-from django.views.decorators.csrf import csrf_exempt
-from .serializers import MinesweeperUserSerializer, MinesweeperGameSerializer
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.views import APIView
+from rest_framework.parsers import JSONParser
+from .serializers import MinesweeperUserSerializer, MinesweeperGameSerializer
 from .models import MinesweeperGame, MinesweeperUser
 from .permissions import IsOwnerOrReadOnly
-from django.http import HttpResponse, JsonResponse
-from rest_framework.parsers import JSONParser
+from .mastertoken import CHECK_MASTER_TOKEN
+
 
 
 @csrf_exempt
@@ -35,15 +37,21 @@ def user_list(request, format=None):
     """
     List all code snippets, or create a new snippet.
     """
+    token = dict(request.headers)['Authorization'].split(' ')[1]
     if request.method == 'GET':
-        users = User.objects.all()
-        serializer = MinesweeperUserSerializer(users, many=True)
+        users = MinesweeperUser.objects.all()
+        if(CHECK_MASTER_TOKEN(token)):
+            serializer = MinesweeperUserSerializer(users, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        authuser = Token.objects.get(key=token).user
+        minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
+        serializer = MinesweeperUserSerializer(minesweeperuser)
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'POST':
         data = JSONParser().parse(request)
         serializer = MinesweeperUserSerializer(data=data)
-        if serializer.is_valid():
+        if serializer.is_valid() and CHECK_MASTER_TOKEN(token):
             serializer.save()
             return JsonResponse(serializer.data, status=201)
         return JsonResponse(serializer.errors, status=400)
@@ -55,15 +63,22 @@ def user_detail(request, pk, format=None):
     Retrieve, update or delete a code snippet.
     """
     try:
-        user = User.objects.get(pk=pk)
+        user = MinesweeperUser.objects.get(pk=pk)
+        token = dict(request.headers)['Authorization'].split(' ')[1]
+        authuser = Token.objects.get(key=token).user
+        minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
     except User.DoesNotExist:
         return HttpResponse(status=404)
 
     if request.method == 'GET':
-        serializer = MinesweeperUserSerializer(user)
-        return JsonResponse(serializer.data)
+        if(user.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
+            serializer = MinesweeperUserSerializer(user)
+            return JsonResponse(serializer.data)
+        return HttpResponse('{"detail": "You are not authorized to view this page"}', status=401)
 
     elif request.method == 'PUT':
+        if(user.id != minesweeperuser.id and not CHECK_MASTER_TOKEN(token)):
+            return HttpResponse('{"detail": "You are forbidden from editing this user"}', status=403)
         data = JSONParser().parse(request)
         serializer = MinesweeperUserSerializer(user, data=data)
         if serializer.is_valid():
@@ -72,8 +87,12 @@ def user_detail(request, pk, format=None):
         return JsonResponse(serializer.errors, status=400)
 
     elif request.method == 'DELETE':
-        user.delete()
-        return HttpResponse(status=204)
+        if(CHECK_MASTER_TOKEN(token)):
+            user.delete()
+            return HttpResponse(status=204)
+        return HttpResponse('{"detail": "You are forbidden from deleting users"}', status=403)
+        
+    
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
@@ -81,13 +100,23 @@ def game_list(request, format=None):
     """
     List all code snippets, or create a new snippet.
     """
+    token = dict(request.headers)['Authorization'].split(' ')[1]
     if request.method == 'GET':
-        games = MinesweeperGame.objects.all()
+        all_games = MinesweeperGame.objects.all()
+        if(CHECK_MASTER_TOKEN(token)):
+            serializer = MinesweeperGameSerializer(all_games, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        
+        authuser = Token.objects.get(key=token).user
+        minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
+        games = MinesweeperGame.objects.filter(user=minesweeperuser)
         serializer = MinesweeperGameSerializer(games, many=True)
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'POST':
+        authuser = Token.objects.get(key=token).user
         data = JSONParser().parse(request)
+        data['user'] = MinesweeperUser.objects.get(email=authuser.email).id
         serializer = MinesweeperGameSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -95,31 +124,26 @@ def game_list(request, format=None):
         return JsonResponse(serializer.errors, status=400)
 
 @csrf_exempt
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'DELETE'])
 def game_detail(request, pk, format=None):
     """
     Retrieve, update or delete a code snippet.
     """
     try:
-        game = Game.objects.get(pk=pk)
-    except Game.DoesNotExist:
+        game = MinesweeperGame.objects.get(pk=pk)
+        token = dict(request.headers)['Authorization'].split(' ')[1]
+    except MinesweeperGame.DoesNotExist:
         return HttpResponse(status=404)
 
     if request.method == 'GET':
         serializer = MinesweeperGameSerializer(game)
         return JsonResponse(serializer.data)
-
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        serializer = MinesweeperGameSerializer(game, data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data)
-        return JsonResponse(serializer.errors, status=400)
-
+        
     elif request.method == 'DELETE':
-        game.delete()
-        return HttpResponse(status=204)
+        if(CHECK_MASTER_TOKEN(token)):
+            game.delete()
+            return HttpResponse(status=204)
+        return HttpResponse('{"detail": "You are forbidden from deleting users"}', status=403)
 
 """class HighscoreListViewSet(viewsets.ModelViewSet):
  
