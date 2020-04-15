@@ -123,6 +123,26 @@ def game_list(request, format=None):
             return JsonResponse(serializer.data, status=201)
         return JsonResponse(serializer.errors, status=400)
 
+
+@csrf_exempt
+@api_view(['GET'])
+def highscore_list(request, format=None):
+    """
+    List all code snippets, or create a new snippet.
+    """
+    token = dict(request.headers)['Authorization'].split(' ')[1]
+    if request.method == 'GET':
+        all_games = MinesweeperGame.objects.filter(game_won=True)
+        if(CHECK_MASTER_TOKEN(token)):
+            serializer = MinesweeperGameSerializer(all_games, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        
+        authuser = Token.objects.get(key=token).user
+        minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
+        games = MinesweeperGame.objects.filter(user=minesweeperuser, game_won=True)
+        serializer = MinesweeperGameSerializer(games, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
 @csrf_exempt
 @api_view(['GET', 'DELETE'])
 def game_detail(request, pk, format=None):
