@@ -82,8 +82,8 @@ def game_list(request, format=None):
     List all code snippets, or create a new snippet.
     """
     if request.method == 'GET':
-        games = Game.objects.all()
-        serializer = MinesweeperGameSerializer(users, many=True)
+        games = MinesweeperGame.objects.all()
+        serializer = MinesweeperGameSerializer(games, many=True)
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'POST':
@@ -106,12 +106,12 @@ def game_detail(request, pk, format=None):
         return HttpResponse(status=404)
 
     if request.method == 'GET':
-        serializer = MinesweeperGameSerializer(user)
+        serializer = MinesweeperGameSerializer(game)
         return JsonResponse(serializer.data)
 
     elif request.method == 'PUT':
         data = JSONParser().parse(request)
-        serializer = MinesweeperGameSerializer(user, data=data)
+        serializer = MinesweeperGameSerializer(game, data=data)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data)
