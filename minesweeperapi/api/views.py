@@ -121,7 +121,7 @@ def game_list(request, format=None):
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, status=400)
+        return JsonResponse(serializer.errors, status=401)
 
 
 @csrf_exempt

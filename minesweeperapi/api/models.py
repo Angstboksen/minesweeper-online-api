@@ -17,7 +17,7 @@ class MinesweeperUser(models.Model):
         if is_new:
             authuser = User(username=self.username, email=self.email,
                             first_name=self.first_name, last_name=self.last_name)
-            authuser.set_password(self.username)
+            authuser.set_password(self.email)
             authuser.save()
 
     class Meta:
