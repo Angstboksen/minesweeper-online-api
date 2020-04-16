@@ -165,18 +165,6 @@ def game_detail(request, pk, format=None):
             return HttpResponse(status=204)
         return HttpResponse('{"detail": "You are forbidden from deleting users"}', status=403)
 
-"""class HighscoreListViewSet(viewsets.ModelViewSet):
- 
-    queryset = HighscoreList.objects.all()
-    serializer_class = HighscoreListSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-class HighscoreViewSet(viewsets.ModelViewSet):
- 
-    queryset = Highscore.objects.all()
-    serializer_class = HighscoreSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]"""
-
 
 class CustomAuthToken(ObtainAuthToken):
 

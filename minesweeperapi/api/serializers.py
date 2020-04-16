@@ -14,4 +14,4 @@ class MinesweeperGameSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = MinesweeperGame
-        fields = ['id', 'user', 'user_email', 'game_time', 'game_won', 'date']
+        fields = ['id', 'user', 'user_email', 'game_time', 'game_won', 'date', 'difficulty']

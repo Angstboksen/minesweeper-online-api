@@ -29,9 +29,10 @@ class MinesweeperGame(models.Model):
     game_won = models.BooleanField(default=False)
     game_time = models.IntegerField()
     date = models.DateTimeField(auto_now_add=True)
+    difficulty = models.CharField(default='easy', max_length=45)
 
     def __str__(self):
-        return str(self.user) + " : " + str(self.game_time)
+        return str(self.user) + " : " + str(self.game_time) + " : " + self.difficulty
 
     class Meta:
         ordering = ['user']
