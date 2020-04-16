@@ -34,10 +34,7 @@ def api_root(request, format=None):
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def user_list(request, format=None):
-    """
-    List all code snippets, or create a new snippet.
-    """
-    token = dict(request.headers)['Authorization'].split(' ')[1]
+    token = request._auth.key
     if request.method == 'GET':
         users = MinesweeperUser.objects.all()
         if(CHECK_MASTER_TOKEN(token)):
@@ -59,12 +56,9 @@ def user_list(request, format=None):
 @csrf_exempt
 @api_view(['GET', 'PUT', 'DELETE'])
 def user_detail(request, pk, format=None):
-    """
-    Retrieve, update or delete a code snippet.
-    """
     try:
         user = MinesweeperUser.objects.get(pk=pk)
-        token = dict(request.headers)['Authorization'].split(' ')[1]
+        request._auth.key
         authuser = Token.objects.get(key=token).user
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
     except User.DoesNotExist:
@@ -97,10 +91,7 @@ def user_detail(request, pk, format=None):
 @csrf_exempt
 @api_view(['GET', 'POST'])
 def game_list(request, format=None):
-    """
-    List all code snippets, or create a new snippet.
-    """
-    token = dict(request.headers)['Authorization'].split(' ')[1]
+    token = request._auth.key
     if request.method == 'GET':
         all_games = MinesweeperGame.objects.all()
         if(CHECK_MASTER_TOKEN(token)):
@@ -127,10 +118,8 @@ def game_list(request, format=None):
 @csrf_exempt
 @api_view(['GET'])
 def highscore_list(request, format=None):
-    """
-    List all code snippets, or create a new snippet.
-    """
-    token = dict(request.headers)['Authorization'].split(' ')[1]
+
+    token = request._auth.key
     if request.method == 'GET':
         all_games = MinesweeperGame.objects.filter(game_won=True)
         if(CHECK_MASTER_TOKEN(token)):
@@ -146,12 +135,9 @@ def highscore_list(request, format=None):
 @csrf_exempt
 @api_view(['GET', 'DELETE'])
 def game_detail(request, pk, format=None):
-    """
-    Retrieve, update or delete a code snippet.
-    """
     try:
         game = MinesweeperGame.objects.get(pk=pk)
-        token = dict(request.headers)['Authorization'].split(' ')[1]
+        token = request._auth.key
     except MinesweeperGame.DoesNotExist:
         return HttpResponse(status=404)
 
