@@ -11,7 +11,8 @@ class MinesweeperUserSerializer(serializers.ModelSerializer):
 
 class MinesweeperGameSerializer(serializers.ModelSerializer):
     user_email = serializers.ReadOnlyField(source='user.email')
+    user_name = serializers.ReadOnlyField(source='user.first_name')
     
     class Meta:
         model = MinesweeperGame
-        fields = ['id', 'user', 'user_email', 'game_time', 'game_won', 'date', 'difficulty']
+        fields = ['id', 'user', 'user_email', 'user_name', 'game_time', 'game_won', 'date', 'difficulty']
