@@ -130,7 +130,7 @@ def highscore_list(request, format=None):
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         games = MinesweeperGame.objects.filter(user=minesweeperuser, game_won=True)
         serializer = MinesweeperGameSerializer(games, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return JsonResponse(serializer.data, safe=False) 
 
 @csrf_exempt
 @api_view(['GET', 'DELETE'])

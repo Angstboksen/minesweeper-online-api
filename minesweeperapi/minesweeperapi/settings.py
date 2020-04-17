@@ -138,4 +138,8 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = [
        'http://localhost:3000',
        'http://85.164.49.124:5000',
+       'https://www.angstboksen.no',
+       'http://www.angstboksen.no',
+       'http://angstboksen.no',
+       'https://angstboksen.no',
 ]
