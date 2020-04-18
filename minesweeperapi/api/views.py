@@ -174,15 +174,17 @@ def games_count(request, format=None):
     if request.method == 'POST':
         data = JSONParser().parse(request)
         email = data['email']
-        spec = data['spec']
+        if(email == 'all'):
+            games_count = MinesweeperGame.objects.all().count()
+            games_count_won = MinesweeperGame.objects.filter(game_won=True).count()
+            games_count_lost = MinesweeperGame.objects.filter(game_won=False).count()
+            content = {'games_count': games_count, 'games_won' : games_count_won, 'games_lost': games_count_lost}
+            return JsonResponse(content)
         authuser = MinesweeperUser.objects.get(email=email)
-        if spec == 'won':
-            games_count = MinesweeperGame.objects.filter(user=authuser, game_won=True).count()
-        elif spec == 'lost':
-            games_count = MinesweeperGame.objects.filter(user=authuser, game_won=False).count()
-        else:
-            games_count = MinesweeperGame.objects.filter(user=authuser).count()
-        content = {'games_count': games_count}
+        games_count_won = MinesweeperGame.objects.filter(user=authuser, game_won=True).count()
+        games_count_lost = MinesweeperGame.objects.filter(user=authuser, game_won=False).count()
+        games_count = MinesweeperGame.objects.filter(user=authuser).count()
+        content = {'games_count': games_count, 'games_won' : games_count_won, 'games_lost': games_count_lost}
         return JsonResponse(content)
 
 
