@@ -48,6 +48,7 @@ def user_list(request, format=None):
 
     elif request.method == 'POST':
         data = JSONParser().parse(request)
+        print('New user email: ' + data['email'])
         serializer = MinesweeperUserSerializer(data=data)
         if serializer.is_valid() and CHECK_MASTER_TOKEN(token):
             serializer.save()
@@ -141,8 +142,7 @@ def highscore_list(request, format=None):
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         games = MinesweeperGame.objects.filter(
-            user=minesweeperuser, game_won=True)[:10]
-        print(games)
+            user=minesweeperuser, game_won=True)
         serializer = MinesweeperGameSerializer(games, many=True)
         return JsonResponse(serializer.data, safe=False)
 
