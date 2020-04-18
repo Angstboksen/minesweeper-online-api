@@ -4,8 +4,8 @@ from django.contrib.auth.models import User
 
 class MinesweeperUser(models.Model):
     username = models.CharField(unique=True, max_length=150)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=150)
+    first_name = models.CharField(max_length=30, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
     email = models.EmailField(max_length=70, unique=True)
 
     def __str__(self):
@@ -32,7 +32,7 @@ class MinesweeperGame(models.Model):
     difficulty = models.CharField(default='easy', max_length=45)
 
     def __str__(self):
-        return str(self.user) + " : " + str(self.game_time) + " : " + self.difficulty
+        return str(self.user) + " : " + self.difficulty + ' : ' + str(self.game_time) + ' : '+ str(self.game_won)  
 
     class Meta:
-        ordering = ['user']
+        ordering = ['user', 'game_won', 'game_time']

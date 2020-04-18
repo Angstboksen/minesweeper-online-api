@@ -22,7 +22,6 @@ from .permissions import IsOwnerOrReadOnly
 from .mastertoken import CHECK_MASTER_TOKEN
 
 
-
 @csrf_exempt
 @api_view(['GET'])
 def api_root(request, format=None):
@@ -30,6 +29,7 @@ def api_root(request, format=None):
         'users': reverse('user-list', request=request, format=format),
         'games': reverse('game-list', request=request, format=format)
     })
+
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
@@ -41,6 +41,7 @@ def user_list(request, format=None):
             serializer = MinesweeperUserSerializer(users, many=True)
             return JsonResponse(serializer.data, safe=False)
         authuser = Token.objects.get(key=token).user
+        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         serializer = MinesweeperUserSerializer(minesweeperuser)
         return JsonResponse(serializer.data, safe=False)
@@ -53,6 +54,7 @@ def user_list(request, format=None):
             return JsonResponse(serializer.data, status=201)
         return JsonResponse(serializer.errors, status=400)
 
+
 @csrf_exempt
 @api_view(['GET', 'PUT', 'DELETE'])
 def user_detail(request, pk, format=None):
@@ -60,6 +62,7 @@ def user_detail(request, pk, format=None):
         user = MinesweeperUser.objects.get(pk=pk)
         request._auth.key
         authuser = Token.objects.get(key=token).user
+        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
     except User.DoesNotExist:
         return HttpResponse(status=404)
@@ -85,8 +88,7 @@ def user_detail(request, pk, format=None):
             user.delete()
             return HttpResponse(status=204)
         return HttpResponse('{"detail": "You are forbidden from deleting users"}', status=403)
-        
-    
+
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
@@ -97,8 +99,9 @@ def game_list(request, format=None):
         if(CHECK_MASTER_TOKEN(token)):
             serializer = MinesweeperGameSerializer(all_games, many=True)
             return JsonResponse(serializer.data, safe=False)
-        
+
         authuser = Token.objects.get(key=token).user
+        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         games = MinesweeperGame.objects.filter(user=minesweeperuser)
         serializer = MinesweeperGameSerializer(games, many=True)
@@ -107,6 +110,9 @@ def game_list(request, format=None):
     elif request.method == 'POST':
         authuser = Token.objects.get(key=token).user
         data = JSONParser().parse(request)
+        print('User email: ' + authuser.email)
+        print('Game won: ' + str(data['game_won']))
+        print('Game time: ' + format_time((data['game_time'])))
         data['user'] = MinesweeperUser.objects.get(email=authuser.email).id
         serializer = MinesweeperGameSerializer(data=data)
         if serializer.is_valid():
@@ -114,6 +120,11 @@ def game_list(request, format=None):
             return JsonResponse(serializer.data, status=201)
         return JsonResponse(serializer.errors, status=401)
 
+
+def format_time(millis):
+    minutes = (millis // 60000)
+    seconds = (millis / 1000) % 60
+    return str(minutes) + " minutes : " + str(seconds) + " seconds"
 
 @csrf_exempt
 @api_view(['GET'])
@@ -125,12 +136,16 @@ def highscore_list(request, format=None):
         if(CHECK_MASTER_TOKEN(token)):
             serializer = MinesweeperGameSerializer(all_games, many=True)
             return JsonResponse(serializer.data, safe=False)
-        
+
         authuser = Token.objects.get(key=token).user
+        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        games = MinesweeperGame.objects.filter(user=minesweeperuser, game_won=True)
+        games = MinesweeperGame.objects.filter(
+            user=minesweeperuser, game_won=True)[:10]
+        print(games)
         serializer = MinesweeperGameSerializer(games, many=True)
-        return JsonResponse(serializer.data, safe=False) 
+        return JsonResponse(serializer.data, safe=False)
+
 
 @csrf_exempt
 @api_view(['GET', 'DELETE'])
@@ -144,12 +159,31 @@ def game_detail(request, pk, format=None):
     if request.method == 'GET':
         serializer = MinesweeperGameSerializer(game)
         return JsonResponse(serializer.data)
-        
+
     elif request.method == 'DELETE':
         if(CHECK_MASTER_TOKEN(token)):
             game.delete()
             return HttpResponse(status=204)
         return HttpResponse('{"detail": "You are forbidden from deleting users"}', status=403)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def games_count(request, format=None):
+
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        email = data['email']
+        spec = data['spec']
+        authuser = MinesweeperUser.objects.get(email=email)
+        if spec == 'won':
+            games_count = MinesweeperGame.objects.filter(user=authuser, game_won=True).count()
+        elif spec == 'lost':
+            games_count = MinesweeperGame.objects.filter(user=authuser, game_won=False).count()
+        else:
+            games_count = MinesweeperGame.objects.filter(user=authuser).count()
+        content = {'games_count': games_count}
+        return JsonResponse(content)
 
 
 class CustomAuthToken(ObtainAuthToken):
@@ -159,6 +193,7 @@ class CustomAuthToken(ObtainAuthToken):
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
+        print('User email: ' + user.email)
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
