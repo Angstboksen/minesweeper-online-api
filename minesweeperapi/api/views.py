@@ -61,7 +61,7 @@ def user_list(request, format=None):
 def user_detail(request, pk, format=None):
     try:
         user = MinesweeperUser.objects.get(pk=pk)
-        request._auth.key
+        token = request._auth.key
         authuser = Token.objects.get(key=token).user
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
@@ -75,7 +75,7 @@ def user_detail(request, pk, format=None):
         return HttpResponse('{"detail": "You are not authorized to view this page"}', status=401)
 
     elif request.method == 'PUT':
-        if(user.id != minesweeperuser.id and not CHECK_MASTER_TOKEN(token)):
+        if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from editing this user"}', status=403)
         data = JSONParser().parse(request)
         serializer = MinesweeperUserSerializer(user, data=data)
@@ -126,6 +126,19 @@ def format_time(millis):
     minutes = (millis // 60000)
     seconds = (millis / 1000) % 60
     return str(minutes) + " minutes : " + str(seconds) + " seconds"
+
+
+@csrf_exempt
+@api_view(['GET'])
+def online_users(request, format=None):
+
+    token = request._auth.key
+    if request.method == 'GET':
+        if(CHECK_MASTER_TOKEN(token)):
+            online_users = MinesweeperUser.objects.filter(online=True)
+            serializer = MinesweeperUserSerializer(online_users, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        return JsonResponse({'content' : 'You are not authorized to view this page'}, safe=False)
 
 @csrf_exempt
 @api_view(['GET'])
@@ -195,6 +208,7 @@ class CustomAuthToken(ObtainAuthToken):
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
+        minesweeperuser = MinesweeperUser.objects.get(email=user.email)
         print('User email: ' + user.email)
         token, created = Token.objects.get_or_create(user=user)
         return Response({
