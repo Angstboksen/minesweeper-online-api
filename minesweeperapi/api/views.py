@@ -16,8 +16,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
-from .serializers import MinesweeperUserSerializer, MinesweeperGameSerializer
-from .models import MinesweeperGame, MinesweeperUser
+from .serializers import MinesweeperUserSerializer, MinesweeperGameSerializer, MultiplayerGameSerializer, MultiplayerCoordinatesSerializer
+from .models import MinesweeperGame, MinesweeperUser, MultiplayerGame, MultiplayerCoordinates
 from .permissions import IsOwnerOrReadOnly
 from .mastertoken import CHECK_MASTER_TOKEN
 
@@ -138,7 +138,8 @@ def online_users(request, format=None):
             online_users = MinesweeperUser.objects.filter(online=True)
             serializer = MinesweeperUserSerializer(online_users, many=True)
             return JsonResponse(serializer.data, safe=False)
-        return JsonResponse({'content' : 'You are not authorized to view this page'}, safe=False)
+        return JsonResponse({'content': 'You are not authorized to view this page'}, safe=False)
+
 
 @csrf_exempt
 @api_view(['GET'])
@@ -189,16 +190,93 @@ def games_count(request, format=None):
         email = data['email']
         if(email == 'all'):
             games_count = MinesweeperGame.objects.all().count()
-            games_count_won = MinesweeperGame.objects.filter(game_won=True).count()
-            games_count_lost = MinesweeperGame.objects.filter(game_won=False).count()
-            content = {'games_count': games_count, 'games_won' : games_count_won, 'games_lost': games_count_lost}
+            games_count_won = MinesweeperGame.objects.filter(
+                game_won=True).count()
+            games_count_lost = MinesweeperGame.objects.filter(
+                game_won=False).count()
+            content = {'games_count': games_count,
+                'games_won': games_count_won, 'games_lost': games_count_lost}
             return JsonResponse(content)
         authuser = MinesweeperUser.objects.get(email=email)
-        games_count_won = MinesweeperGame.objects.filter(user=authuser, game_won=True).count()
-        games_count_lost = MinesweeperGame.objects.filter(user=authuser, game_won=False).count()
+        games_count_won = MinesweeperGame.objects.filter(
+            user=authuser, game_won=True).count()
+        games_count_lost = MinesweeperGame.objects.filter(
+            user=authuser, game_won=False).count()
         games_count = MinesweeperGame.objects.filter(user=authuser).count()
-        content = {'user_email': email, 'games_count': games_count, 'games_won' : games_count_won, 'games_lost': games_count_lost}
+        content = {'user_email': email, 'games_count': games_count,
+            'games_won': games_count_won, 'games_lost': games_count_lost}
         return JsonResponse(content)
+
+
+@csrf_exempt
+@api_view(['GET', 'POST'])
+def multiplayer_game(request, format=None):
+    token = request._auth.key
+
+    if request.method == 'GET':
+        all_games = MultiplayerGame.objects.all()
+        if(CHECK_MASTER_TOKEN(token)):
+            serializer = MultiplayerGameSerializer(all_games, many=True)
+            return JsonResponse(serializer.data, safe=False)
+
+        authuser = Token.objects.get(key=token).user
+        print('User email: ' + authuser.email)
+        minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
+        player_one_games = MultiplayerGame.objects.filter(
+            player_one=minesweeperuser)
+        player_two_games = MultiplayerGame.objects.filter(
+            player_two=minesweeperuser)
+        games = player_one_games | player_two_games
+        serializer = MultiplayerGameSerializer(games, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'POST':
+        if not CHECK_MASTER_TOKEN(token):
+            return HttpResponse('{"detail": "You are forbidden from posting a new game"}', status=403)
+        data = JSONParser().parse(request)
+        email = data['player_two']
+        invited_user = MinesweeperUser.objects.get(email=email)
+        data['player_two'] = invited_user
+        serializer = MultiplayerGameSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=201)
+        return JsonResponse(serializer.errors, status=401)
+
+
+@csrf_exempt
+@api_view(['GET', 'PUT', 'DELETE'])
+def multiplayer_game_detail(request, pk, format=None):
+    try:
+        game = MultiplayerGame.objects.get(pk=pk)
+        token = request._auth.key
+        authuser = Token.objects.get(key=token).user
+        print('User email: ' + authuser.email)
+        minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
+    except User.DoesNotExist:
+        return HttpResponse(status=404)
+
+    if request.method == 'GET':
+        if(game.player_one.id == minesweeperuser.id or game.player_two.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
+            serializer = MultiplayerGameSerializer(game)
+            return JsonResponse(serializer.data)
+        return HttpResponse('{"detail": "You are not authorized to view this page"}', status=401)
+
+    elif request.method == 'PUT':
+        if not CHECK_MASTER_TOKEN(token):
+            return HttpResponse('{"detail": "You are forbidden from editing this game"}', status=403)
+        data = JSONParser().parse(request)
+        serializer = MultiplayerGameSerializer(game, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse(serializer.errors, status=400)
+
+    elif request.method == 'DELETE':
+        if(CHECK_MASTER_TOKEN(token)):
+            game.delete()
+            return HttpResponse(status=204)
+        return HttpResponse('{"detail": "You are forbidden from deleting users"}', status=403)
 
 
 class CustomAuthToken(ObtainAuthToken):
