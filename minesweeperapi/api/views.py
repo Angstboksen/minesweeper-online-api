@@ -197,7 +197,7 @@ def games_count(request, format=None):
         games_count_won = MinesweeperGame.objects.filter(user=authuser, game_won=True).count()
         games_count_lost = MinesweeperGame.objects.filter(user=authuser, game_won=False).count()
         games_count = MinesweeperGame.objects.filter(user=authuser).count()
-        content = {'games_count': games_count, 'games_won' : games_count_won, 'games_lost': games_count_lost}
+        content = {'user_email': email, 'games_count': games_count, 'games_won' : games_count_won, 'games_lost': games_count_lost}
         return JsonResponse(content)
 
 

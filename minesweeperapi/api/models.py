@@ -37,3 +37,19 @@ class MinesweeperGame(models.Model):
 
     class Meta:
         ordering = ['user', 'game_won', 'game_time']
+
+
+class MultiplayerGame(models.Model):
+    player_one = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="player1")
+    player_two = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="player2")
+    difficulty = models.CharField(default='easy', max_length=45) 
+    gameover = models.BooleanField(default=False)
+    game_winner = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="game_winner")
+    date = models.DateTimeField(auto_now=True)
+    game_code = models.CharField(default='WRONG', max_length=45, unique=True)
+
+    def __str__(self):
+        return str(self.player_one) + " : " + str(self.player_two) + ' : ' + str(self.date)
+
+    class Meta:
+        ordering = ['player_one', 'player_two', 'date']
