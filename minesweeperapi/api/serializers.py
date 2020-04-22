@@ -27,8 +27,9 @@ class MultiplayerGameSerializer(serializers.ModelSerializer):
         fields = ['id', 'player_one', 'player_one_email', 'player_two', 'player_two_email', 'difficulty', 'game_winner', 'game_winner_email', 'game_winner_time', 'date', 'game_code']
     
 class MultiplayerCoordinatesSerializer(serializers.ModelSerializer):
-    
+    player_email = serializers.ReadOnlyField(source='player.email')
+
     class Meta:
         model = MultiplayerCoordinates
-        fields = ['id', 'game', 'x_coord', 'y_coord', 'player', 'flagged']
+        fields = ['id', 'game', 'x_coord', 'y_coord', 'player', 'player_email', 'flagged']
 
