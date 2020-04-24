@@ -1,4 +1,4 @@
-from .views import api_root, user_detail, user_list, game_list, game_detail, highscore_list, games_count, online_users, multiplayer_game_instance, multiplayer_game, multiplayer_game_detail, multiplayer_coordinates, multiplayer_coorinates_detail
+from .views import api_root, user_detail, user_list, game_list, game_detail, highscore_list, games_count, online_users, check_user_exist, multiplayer_game_instance, multiplayer_game, multiplayer_game_detail, multiplayer_coordinates, multiplayer_coorinates_detail
 from django.urls import path, include
 from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
@@ -20,6 +20,7 @@ urlpatterns = [
     path('coords/', multiplayer_coordinates, name="multiplayer-coordinates"),
     path('coords/<slug:slug>/', multiplayer_coorinates_detail, name="multiplayer-coordinates-detail"),
     path('multiplayerinstance/', multiplayer_game_instance, name="multiplayer-game_instance"),
+    path('validateuser/', check_user_exist, name="check-user-exist"),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

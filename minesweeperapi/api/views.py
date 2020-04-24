@@ -136,8 +136,10 @@ def online_users(request, format=None):
     if request.method == 'GET':
         if(CHECK_MASTER_TOKEN(token)):
             online_users = MinesweeperUser.objects.filter(online=True)
-            serializer = MinesweeperUserSerializer(online_users, many=True)
-            return JsonResponse(serializer.data, safe=False)
+            users = []
+            for user in online_users:
+                users.append(user.first_name)
+            return JsonResponse(users, safe=False)
         return JsonResponse({'content': 'You are not authorized to view this page'}, safe=False)
 
 
@@ -231,17 +233,27 @@ def multiplayer_game(request, format=None):
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'POST':
-        if not CHECK_MASTER_TOKEN(token):
-            return HttpResponse('{"detail": "You are forbidden from posting a new game"}', status=403)
-        data = JSONParser().parse(request)
-        email = data['player_two']
-        invited_user = MinesweeperUser.objects.get(email=email)
-        data['player_two'] = invited_user
-        serializer = MultiplayerGameSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data, status=201)
-        return JsonResponse(serializer.errors, status=401)
+        if CHECK_MASTER_TOKEN(token):
+            data = JSONParser().parse(request)
+
+            email = data['player_two']
+            invited_user = MinesweeperUser.objects.get(email=email)
+            data['player_two'] = invited_user.id
+
+            email = data['player_one']
+            inviting_user = MinesweeperUser.objects.get(email=email)
+            data['player_one'] = inviting_user.id
+
+            data['game_winner'] = 28 #default bullshit
+
+            serializer = MultiplayerGameSerializer(data=data)
+            print(data)
+            print(serializer.is_valid())
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data, status=201)
+            return JsonResponse(serializer.errors, status=500)
+        return HttpResponse('{"detail": "You are forbidden from posting a new game"}', status=403)
 
 @csrf_exempt
 @api_view(['POST'])
@@ -281,7 +293,12 @@ def multiplayer_game_detail(request, slug, format=None):
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from editing this game"}', status=403)
         data = JSONParser().parse(request)
+        email = data['game_winner']
+        user = MinesweeperUser.objects.get(email=email)
+        data['game_winner'] = user.id
+        print(data)
         serializer = MultiplayerGameSerializer(game, data=data)
+        print(serializer.is_valid())
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data)
@@ -382,3 +399,15 @@ class CustomAuthToken(ObtainAuthToken):
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
+@csrf_exempt
+@api_view(['POST'])
+def check_user_exist(request, format=None):
+
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        email = data['email'] 
+        minesweeperuser = MinesweeperUser.objects.filter(email=email).count()
+        if minesweeperuser > 0:
+            return JsonResponse({'content': 'true'}, status=200)
+        return JsonResponse({'content': 'false'}, status=200)

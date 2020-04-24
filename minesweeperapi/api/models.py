@@ -43,9 +43,9 @@ class MultiplayerGame(models.Model):
     player_one = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="player1", blank=True)
     player_two = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="player2", blank=True)
     difficulty = models.CharField(default='easy', max_length=45) 
-    gameover = models.BooleanField(default=False)
+    gameover = models.BooleanField(default=False, blank=True)
     game_winner = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="game_winner", blank=True)
-    game_winner_time = models.IntegerField(default=-1)
+    game_winner_time = models.IntegerField(default=-1, blank=True)
     date = models.DateTimeField(auto_now=True)
     game_code = models.CharField(default='WRONG_CODE', max_length=45, unique=True)
 
