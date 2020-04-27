@@ -38,35 +38,31 @@ class MinesweeperGame(models.Model):
     class Meta:
         ordering = ['user', 'game_won', 'game_time']
 
-
-class MultiplayerGame(models.Model):
-    player_one = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="player1", blank=True)
-    player_two = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="player2", blank=True)
-    difficulty = models.CharField(default='easy', max_length=45) 
-    gameover = models.BooleanField(default=False, blank=True)
-    game_winner = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="game_winner", blank=True)
-    game_winner_time = models.IntegerField(default=-1, blank=True)
-    date = models.DateTimeField(auto_now=True)
-    game_code = models.CharField(default='WRONG_CODE', max_length=45, unique=True)
+class SpectatedGame(models.Model):
+    user = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE)
+    game_won = models.BooleanField(default=False)
+    game_time = models.IntegerField(blank=True)
+    date = models.DateTimeField(auto_now_add=True)
+    difficulty = models.CharField(default='easy', max_length=45)
+    game_code = models.CharField(max_length=45, unique=True)
 
     def __str__(self):
-        return str(self.player_one) + " : " + str(self.player_two) + ' : ' + str(self.date)
+        return str(self.user) + " : " + self.difficulty + ' : ' + str(self.game_time) + ' : '+ str(self.game_won)  + ' : '+ str(self.game_code) 
 
     class Meta:
-        ordering = ['player_one', 'player_two', 'date']
+        unique_together = ['user', 'game_code']
+        ordering = ['user', 'game_won', 'game_time']
 
-class MultiplayerCoordinates(models.Model):
-    game = models.ForeignKey('MultiplayerGame', on_delete=models.CASCADE, related_name="game", blank=True)
+class SpectatedCoordinates(models.Model):
+    game = models.ForeignKey('SpectatedGame', on_delete=models.CASCADE, related_name="game", blank=True)
     x_coord = models.IntegerField(default=-1)
     y_coord = models.IntegerField(default=-1)
-    player = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE, related_name="player", blank=True)
     flagged = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.game.game_code) + " : " + str(self.player) + ' : ' + str(self.x_coord) + ' : ' + str(self.y_coord)
+        return str(self.game.game_code) + ' : ' + str(self.x_coord) + ' : ' + str(self.y_coord)
     
     class Meta:
-        unique_together = ['game', 'player', 'x_coord', 'y_coord']
-        ordering = ['game', 'player', 'x_coord', 'y_coord']
-
+        unique_together = ['game', 'x_coord', 'y_coord']
+        ordering = ['game', 'x_coord', 'y_coord']
 

@@ -16,8 +16,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
-from .serializers import MinesweeperUserSerializer, MinesweeperGameSerializer, MultiplayerGameSerializer, MultiplayerCoordinatesSerializer
-from .models import MinesweeperGame, MinesweeperUser, MultiplayerGame, MultiplayerCoordinates
+from .serializers import MinesweeperUserSerializer, MinesweeperGameSerializer, SpectatedGameSerializer, SpectatedCoordinatesSerializer
+from .models import MinesweeperGame, MinesweeperUser, SpectatedGame, SpectatedCoordinates
 from .permissions import IsOwnerOrReadOnly
 from .mastertoken import CHECK_MASTER_TOKEN
 
@@ -212,24 +212,24 @@ def games_count(request, format=None):
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
-def multiplayer_game(request, format=None):
+def Spectated_game(request, format=None):
     token = request._auth.key
 
     if request.method == 'GET':
-        all_games = MultiplayerGame.objects.all()
+        all_games = SpectatedGame.objects.all()
         if(CHECK_MASTER_TOKEN(token)):
-            serializer = MultiplayerGameSerializer(all_games, many=True)
+            serializer = SpectatedGameSerializer(all_games, many=True)
             return JsonResponse(serializer.data, safe=False)
 
         authuser = Token.objects.get(key=token).user
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        player_one_games = MultiplayerGame.objects.filter(
+        player_one_games = SpectatedGame.objects.filter(
             player_one=minesweeperuser)
-        player_two_games = MultiplayerGame.objects.filter(
+        player_two_games = SpectatedGame.objects.filter(
             player_two=minesweeperuser)
         games = player_one_games | player_two_games
-        serializer = MultiplayerGameSerializer(games, many=True)
+        serializer = SpectatedGameSerializer(games, many=True)
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'POST':
@@ -246,7 +246,7 @@ def multiplayer_game(request, format=None):
 
             data['game_winner'] = 28 #default bullshit
 
-            serializer = MultiplayerGameSerializer(data=data)
+            serializer = SpectatedGameSerializer(data=data)
             print(data)
             print(serializer.is_valid())
             if serializer.is_valid():
@@ -257,7 +257,7 @@ def multiplayer_game(request, format=None):
 
 @csrf_exempt
 @api_view(['POST'])
-def multiplayer_game_instance(request, format=None):
+def Spectated_game_instance(request, format=None):
     token = request._auth.key
     data = JSONParser().parse(request)
     if request.method == 'POST':
@@ -265,17 +265,17 @@ def multiplayer_game_instance(request, format=None):
         authuser = Token.objects.get(key=token).user
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        player_one_games = MultiplayerGame.objects.filter(player_one=minesweeperuser, game_code=game_code)
-        player_two_games = MultiplayerGame.objects.filter(player_two=minesweeperuser, game_code=game_code)
+        player_one_games = SpectatedGame.objects.filter(player_one=minesweeperuser, game_code=game_code)
+        player_two_games = SpectatedGame.objects.filter(player_two=minesweeperuser, game_code=game_code)
         games = (player_one_games | player_two_games)
-        serializer = MultiplayerGameSerializer(games, many=True)
+        serializer = SpectatedGameSerializer(games, many=True)
         return JsonResponse(serializer.data, safe=False)
 
 @csrf_exempt
 @api_view(['GET', 'PUT', 'DELETE'])
-def multiplayer_game_detail(request, slug, format=None):
+def Spectated_game_detail(request, slug, format=None):
     try:
-        game = MultiplayerGame.objects.get(game_code=slug)
+        game = SpectatedGame.objects.get(game_code=slug)
         token = request._auth.key
         authuser = Token.objects.get(key=token).user
         print('User email: ' + authuser.email)
@@ -285,7 +285,7 @@ def multiplayer_game_detail(request, slug, format=None):
 
     if request.method == 'GET':
         if(game.player_one.id == minesweeperuser.id or game.player_two.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
-            serializer = MultiplayerGameSerializer(game)
+            serializer = SpectatedGameSerializer(game)
             return JsonResponse(serializer.data)
         return HttpResponse('{"detail": "You are not authorized to view this page"}', status=401)
 
@@ -297,7 +297,7 @@ def multiplayer_game_detail(request, slug, format=None):
         user = MinesweeperUser.objects.get(email=email)
         data['game_winner'] = user.id
         print(data)
-        serializer = MultiplayerGameSerializer(game, data=data)
+        serializer = SpectatedGameSerializer(game, data=data)
         print(serializer.is_valid())
         if serializer.is_valid():
             serializer.save()
@@ -313,20 +313,20 @@ def multiplayer_game_detail(request, slug, format=None):
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
-def multiplayer_coordinates(request, format=None):
+def Spectated_coordinates(request, format=None):
     token = request._auth.key
     authuser = Token.objects.get(key=token).user
 
     if request.method == 'GET':
-        all_coords = MultiplayerCoordinates.objects.all()
+        all_coords = SpectatedCoordinates.objects.all()
         if(CHECK_MASTER_TOKEN(token)):
-            serializer = MultiplayerCoordinatesSerializer(all_coords, many=True)
+            serializer = SpectatedCoordinatesSerializer(all_coords, many=True)
             return JsonResponse(serializer.data, safe=False)
 
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        all_coords = MultiplayerCoordinates.objects.filter(player=minesweeperuser)
-        serializer = MultiplayerCoordinatesSerializer(all_coords, many=True)
+        all_coords = SpectatedCoordinates.objects.filter(player=minesweeperuser)
+        serializer = SpectatedCoordinatesSerializer(all_coords, many=True)
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'POST':
@@ -335,7 +335,7 @@ def multiplayer_coordinates(request, format=None):
         data = JSONParser().parse(request)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         data['player'] = minesweeperuser
-        serializer = MultiplayerCoordinatesSerializer(data=data)
+        serializer = SpectatedCoordinatesSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=201)
@@ -343,7 +343,7 @@ def multiplayer_coordinates(request, format=None):
 
 @csrf_exempt
 @api_view(['POST', 'PUT', 'DELETE'])
-def multiplayer_coorinates_detail(request, slug, format=None):
+def Spectated_coorinates_detail(request, slug, format=None):
     try:
         token = request._auth.key
         authuser = Token.objects.get(key=token).user
@@ -354,12 +354,12 @@ def multiplayer_coorinates_detail(request, slug, format=None):
 
     if request.method == 'POST':
         data = JSONParser().parse(request)
-        multiplayergame = MultiplayerGame.objects.get(game_code=slug)
+        Spectatedgame = SpectatedGame.objects.get(game_code=slug)
         x = data['x_coord']
         y = data['y_coord']
-        coords = MultiplayerCoordinates.objects.get(game=multiplayergame, player=minesweeperuser, x_coord=x, y_coord=y)
+        coords = SpectatedCoordinates.objects.get(game=Spectatedgame, player=minesweeperuser, x_coord=x, y_coord=y)
         if(coords.player.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
-            serializer = MultiplayerCoordinatesSerializer(coords)
+            serializer = SpectatedCoordinatesSerializer(coords)
             return JsonResponse(serializer.data)
         return HttpResponse('{"detail": "You are not authorized to view this page"}', status=401)
 
@@ -367,7 +367,7 @@ def multiplayer_coorinates_detail(request, slug, format=None):
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from editing this game"}', status=403)
         data = JSONParser().parse(request)
-        serializer = MultiplayerCoordinatesSerializer(coords, data=data)
+        serializer = SpectatedCoordinatesSerializer(coords, data=data)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data)
