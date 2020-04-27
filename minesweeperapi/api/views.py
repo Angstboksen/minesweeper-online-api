@@ -212,11 +212,12 @@ def games_count(request, format=None):
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
-def Spectated_game(request, format=None):
+def spectated_game(request, format=None):
     token = request._auth.key
 
     if request.method == 'GET':
         all_games = SpectatedGame.objects.all()
+        print(token)
         if(CHECK_MASTER_TOKEN(token)):
             serializer = SpectatedGameSerializer(all_games, many=True)
             return JsonResponse(serializer.data, safe=False)
@@ -224,28 +225,14 @@ def Spectated_game(request, format=None):
         authuser = Token.objects.get(key=token).user
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        player_one_games = SpectatedGame.objects.filter(
-            player_one=minesweeperuser)
-        player_two_games = SpectatedGame.objects.filter(
-            player_two=minesweeperuser)
-        games = player_one_games | player_two_games
+        games = SpectatedGame.objects.filter(
+            user=minesweeperuser)
         serializer = SpectatedGameSerializer(games, many=True)
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'POST':
         if CHECK_MASTER_TOKEN(token):
             data = JSONParser().parse(request)
-
-            email = data['player_two']
-            invited_user = MinesweeperUser.objects.get(email=email)
-            data['player_two'] = invited_user.id
-
-            email = data['player_one']
-            inviting_user = MinesweeperUser.objects.get(email=email)
-            data['player_one'] = inviting_user.id
-
-            data['game_winner'] = 28 #default bullshit
-
             serializer = SpectatedGameSerializer(data=data)
             print(data)
             print(serializer.is_valid())
@@ -257,7 +244,7 @@ def Spectated_game(request, format=None):
 
 @csrf_exempt
 @api_view(['POST'])
-def Spectated_game_instance(request, format=None):
+def spectated_game_instance(request, format=None):
     token = request._auth.key
     data = JSONParser().parse(request)
     if request.method == 'POST':
@@ -265,15 +252,13 @@ def Spectated_game_instance(request, format=None):
         authuser = Token.objects.get(key=token).user
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        player_one_games = SpectatedGame.objects.filter(player_one=minesweeperuser, game_code=game_code)
-        player_two_games = SpectatedGame.objects.filter(player_two=minesweeperuser, game_code=game_code)
-        games = (player_one_games | player_two_games)
-        serializer = SpectatedGameSerializer(games, many=True)
+        games = SpectatedGame.objects.filter(user=minesweeperuser, game_code=game_code)
+        serializer = spectatedGameSerializer(games, many=True)
         return JsonResponse(serializer.data, safe=False)
 
 @csrf_exempt
 @api_view(['GET', 'PUT', 'DELETE'])
-def Spectated_game_detail(request, slug, format=None):
+def spectated_game_detail(request, slug, format=None):
     try:
         game = SpectatedGame.objects.get(game_code=slug)
         token = request._auth.key
@@ -284,7 +269,7 @@ def Spectated_game_detail(request, slug, format=None):
         return HttpResponse(status=404)
 
     if request.method == 'GET':
-        if(game.player_one.id == minesweeperuser.id or game.player_two.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
+        if(game.user.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
             serializer = SpectatedGameSerializer(game)
             return JsonResponse(serializer.data)
         return HttpResponse('{"detail": "You are not authorized to view this page"}', status=401)
@@ -293,9 +278,6 @@ def Spectated_game_detail(request, slug, format=None):
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from editing this game"}', status=403)
         data = JSONParser().parse(request)
-        email = data['game_winner']
-        user = MinesweeperUser.objects.get(email=email)
-        data['game_winner'] = user.id
         print(data)
         serializer = SpectatedGameSerializer(game, data=data)
         print(serializer.is_valid())
@@ -313,7 +295,7 @@ def Spectated_game_detail(request, slug, format=None):
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
-def Spectated_coordinates(request, format=None):
+def spectated_coordinates(request, format=None):
     token = request._auth.key
     authuser = Token.objects.get(key=token).user
 
@@ -322,19 +304,13 @@ def Spectated_coordinates(request, format=None):
         if(CHECK_MASTER_TOKEN(token)):
             serializer = SpectatedCoordinatesSerializer(all_coords, many=True)
             return JsonResponse(serializer.data, safe=False)
-
-        print('User email: ' + authuser.email)
-        minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        all_coords = SpectatedCoordinates.objects.filter(player=minesweeperuser)
-        serializer = SpectatedCoordinatesSerializer(all_coords, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return JsonResponse({'content': 'Not authorized'}, safe=False)
 
     elif request.method == 'POST':
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from adding coordinates to game"}', status=403)
         data = JSONParser().parse(request)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        data['player'] = minesweeperuser
         serializer = SpectatedCoordinatesSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -343,7 +319,7 @@ def Spectated_coordinates(request, format=None):
 
 @csrf_exempt
 @api_view(['POST', 'PUT', 'DELETE'])
-def Spectated_coorinates_detail(request, slug, format=None):
+def spectated_coorinates_detail(request, slug, format=None):
     try:
         token = request._auth.key
         authuser = Token.objects.get(key=token).user
@@ -354,11 +330,11 @@ def Spectated_coorinates_detail(request, slug, format=None):
 
     if request.method == 'POST':
         data = JSONParser().parse(request)
-        Spectatedgame = SpectatedGame.objects.get(game_code=slug)
+        spectatedgame = SpectatedGame.objects.get(game_code=slug)
         x = data['x_coord']
         y = data['y_coord']
-        coords = SpectatedCoordinates.objects.get(game=Spectatedgame, player=minesweeperuser, x_coord=x, y_coord=y)
-        if(coords.player.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
+        coords = SpectatedCoordinates.objects.get(game=spectatedgame, x_coord=x, y_coord=y)
+        if(coords.game.user.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
             serializer = SpectatedCoordinatesSerializer(coords)
             return JsonResponse(serializer.data)
         return HttpResponse('{"detail": "You are not authorized to view this page"}', status=401)
