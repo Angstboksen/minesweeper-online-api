@@ -138,7 +138,8 @@ def online_users(request, format=None):
             online_users = MinesweeperUser.objects.filter(online=True)
             users = []
             for user in online_users:
-                users.append(user.first_name)
+                specgame = list(SpectatedGame.objects.filter(user=user)).pop()
+                users.append({'user':user.first_name, 'game': specgame.game_code})
             return JsonResponse(users, safe=False)
         return JsonResponse({'content': 'You are not authorized to view this page'}, safe=False)
 
@@ -268,7 +269,7 @@ def spectated_game_detail(request, slug, format=None):
         authuser = Token.objects.get(key=token).user
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-    except User.DoesNotExist:
+    except SpectatedGame.DoesNotExist:
         return HttpResponse(status=404)
 
     if request.method == 'GET':
@@ -281,9 +282,7 @@ def spectated_game_detail(request, slug, format=None):
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from editing this game"}', status=403)
         data = JSONParser().parse(request)
-        print(data)
         serializer = SpectatedGameSerializer(game, data=data)
-        print(serializer.is_valid())
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data)
@@ -355,7 +354,11 @@ def spectated_coorinates_detail(request, slug, format=None):
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from editing this game"}', status=403)
         data = JSONParser().parse(request)
-        spectatedgame = SpectatedGame.objects.get(game_code=slug)
+        try:
+            spectatedgame = SpectatedGame.objects.get(game_code=slug)
+        except:
+            HttpResponse(status=404)
+            return
         x = data['x_coord']
         y = data['y_coord']
         data['game'] = spectatedgame.id

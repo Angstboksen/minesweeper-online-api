@@ -47,11 +47,11 @@ class SpectatedGame(models.Model):
     game_code = models.CharField(max_length=45, unique=True)
 
     def __str__(self):
-        return str(self.user) + " : " + self.difficulty + ' : ' + str(self.game_time) + ' : '+ str(self.game_won)  + ' : '+ str(self.game_code) 
+        return str(self.user) + " : " + self.difficulty + ' : ' + str(self.game_time) + ' : '+ str(self.game_won)  + ' : '+ str(self.game_code) + ' : ' + str(self.date)
 
     class Meta:
         unique_together = ['user', 'game_code']
-        ordering = ['user', 'game_won', 'game_time']
+        ordering = ['date']
 
 class SpectatedCoordinates(models.Model):
     game = models.ForeignKey('SpectatedGame', on_delete=models.CASCADE, related_name="game", blank=True)
@@ -62,7 +62,7 @@ class SpectatedCoordinates(models.Model):
     opened = models.BooleanField(default=False)
 
     def __str__(self):
-        return str(self.game.game_code) + ' : ' + str(self.x_coord) + ' : ' + str(self.y_coord)
+        return str(self.game.game_code) + ' : ' + str(self.x_coord) + ' : ' + str(self.y_coord) + ' : ' + str(self.flagged)
     
     class Meta:
         unique_together = ['game', 'x_coord', 'y_coord']
