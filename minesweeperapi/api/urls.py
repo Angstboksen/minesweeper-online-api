@@ -17,8 +17,8 @@ urlpatterns = [
     path('onlineusers/', online_users, name="online-users"), 
     path('spectatedgames/', spectated_game, name="Spectated-game"), 
     path('spectatedgames/<slug:slug>/', spectated_game_detail, name="Spectated-game-detail"),
-    path('coords/', spectated_coordinates, name="Spectated-coordinates"),
-    path('coords/<slug:slug>/', spectated_coorinates_detail, name="Spectated-coordinates-detail"),
+    path('coordslist/<slug:slug>/', spectated_coordinates, name="Spectated-coordinates"),
+    path('coordsdetail/<slug:slug>/', spectated_coorinates_detail, name="Spectated-coordinates-detail"),
     path('spectatedinstance/', spectated_game_instance, name="Spectated-game_instance"),
     path('validateuser/', check_user_exist, name="check-user-exist"),
 ]

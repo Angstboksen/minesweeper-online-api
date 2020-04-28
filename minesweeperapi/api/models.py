@@ -58,11 +58,13 @@ class SpectatedCoordinates(models.Model):
     x_coord = models.IntegerField(default=-1)
     y_coord = models.IntegerField(default=-1)
     flagged = models.BooleanField(default=False)
+    bomb_count = models.IntegerField(default=-1)
+    opened = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.game.game_code) + ' : ' + str(self.x_coord) + ' : ' + str(self.y_coord)
     
     class Meta:
         unique_together = ['game', 'x_coord', 'y_coord']
-        ordering = ['game', 'x_coord', 'y_coord']
+        ordering = ['game']
 

@@ -197,7 +197,7 @@ def games_count(request, format=None):
             games_count_lost = MinesweeperGame.objects.filter(
                 game_won=False).count()
             content = {'games_count': games_count,
-                'games_won': games_count_won, 'games_lost': games_count_lost}
+                       'games_won': games_count_won, 'games_lost': games_count_lost}
             return JsonResponse(content)
         authuser = MinesweeperUser.objects.get(email=email)
         games_count_won = MinesweeperGame.objects.filter(
@@ -206,7 +206,7 @@ def games_count(request, format=None):
             user=authuser, game_won=False).count()
         games_count = MinesweeperGame.objects.filter(user=authuser).count()
         content = {'user_email': email, 'games_count': games_count,
-            'games_won': games_count_won, 'games_lost': games_count_lost}
+                   'games_won': games_count_won, 'games_lost': games_count_lost}
         return JsonResponse(content)
 
 
@@ -242,6 +242,7 @@ def spectated_game(request, format=None):
             return JsonResponse(serializer.errors, status=500)
         return HttpResponse('{"detail": "You are forbidden from posting a new game"}', status=403)
 
+
 @csrf_exempt
 @api_view(['POST'])
 def spectated_game_instance(request, format=None):
@@ -252,9 +253,11 @@ def spectated_game_instance(request, format=None):
         authuser = Token.objects.get(key=token).user
         print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
-        games = SpectatedGame.objects.filter(user=minesweeperuser, game_code=game_code)
+        games = SpectatedGame.objects.filter(
+            user=minesweeperuser, game_code=game_code)
         serializer = spectatedGameSerializer(games, many=True)
         return JsonResponse(serializer.data, safe=False)
+
 
 @csrf_exempt
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -295,12 +298,15 @@ def spectated_game_detail(request, slug, format=None):
 
 @csrf_exempt
 @api_view(['GET', 'POST'])
-def spectated_coordinates(request, format=None):
+def spectated_coordinates(request, slug, format=None):
     token = request._auth.key
     authuser = Token.objects.get(key=token).user
-
+    try:
+        game = SpectatedGame.objects.get(game_code=slug)
+    except SpectatedGame.DoesNotExist:
+        return JsonResponse({'content': 'Game does not exist'})
     if request.method == 'GET':
-        all_coords = SpectatedCoordinates.objects.all()
+        all_coords = SpectatedCoordinates.objects.filter(game=game)
         if(CHECK_MASTER_TOKEN(token)):
             serializer = SpectatedCoordinatesSerializer(all_coords, many=True)
             return JsonResponse(serializer.data, safe=False)
@@ -310,12 +316,14 @@ def spectated_coordinates(request, format=None):
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from adding coordinates to game"}', status=403)
         data = JSONParser().parse(request)
+        data['game'] = game.id
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         serializer = SpectatedCoordinatesSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data, status=201)
         return JsonResponse(serializer.errors, status=401)
+
 
 @csrf_exempt
 @api_view(['POST', 'PUT', 'DELETE'])
@@ -333,7 +341,11 @@ def spectated_coorinates_detail(request, slug, format=None):
         spectatedgame = SpectatedGame.objects.get(game_code=slug)
         x = data['x_coord']
         y = data['y_coord']
-        coords = SpectatedCoordinates.objects.get(game=spectatedgame, x_coord=x, y_coord=y)
+        try:
+            coords = SpectatedCoordinates.objects.get(
+                game=spectatedgame, x_coord=x, y_coord=y)
+        except SpectatedCoordinates.DoesNotExist:
+            return HttpResponse(status=404)
         if(coords.game.user.id == minesweeperuser.id or CHECK_MASTER_TOKEN(token)):
             serializer = SpectatedCoordinatesSerializer(coords)
             return JsonResponse(serializer.data)
@@ -343,7 +355,16 @@ def spectated_coorinates_detail(request, slug, format=None):
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from editing this game"}', status=403)
         data = JSONParser().parse(request)
-        serializer = SpectatedCoordinatesSerializer(coords, data=data)
+        spectatedgame = SpectatedGame.objects.get(game_code=slug)
+        x = data['x_coord']
+        y = data['y_coord']
+        data['game'] = spectatedgame.id
+        try:
+            coords = SpectatedCoordinates.objects.get(game=spectatedgame, x_coord=x, y_coord=y)
+            serializer = SpectatedCoordinatesSerializer(coords, data=data)
+        except SpectatedCoordinates.DoesNotExist:
+            serializer = SpectatedCoordinatesSerializer(data=data)
+
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data)
@@ -354,6 +375,7 @@ def spectated_coorinates_detail(request, slug, format=None):
             coords.delete()
             return HttpResponse(status=204)
         return HttpResponse('{"detail": "You are forbidden from deleting users"}', status=403)
+
 
 class CustomAuthToken(ObtainAuthToken):
 
@@ -371,10 +393,12 @@ class CustomAuthToken(ObtainAuthToken):
             'email': user.email
         })
 
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
 
 @csrf_exempt
 @api_view(['POST'])
@@ -382,7 +406,7 @@ def check_user_exist(request, format=None):
 
     if request.method == 'POST':
         data = JSONParser().parse(request)
-        email = data['email'] 
+        email = data['email']
         minesweeperuser = MinesweeperUser.objects.filter(email=email).count()
         if minesweeperuser > 0:
             return JsonResponse({'content': 'true'}, status=200)

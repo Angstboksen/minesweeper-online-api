@@ -26,7 +26,8 @@ class SpectatedGameSerializer(serializers.ModelSerializer):
     
 class SpectatedCoordinatesSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='game.user.email')
+    game_code = serializers.ReadOnlyField(source='game.game_code')
     class Meta:
         model = SpectatedCoordinates
-        fields = ['id', 'game', 'x_coord', 'y_coord','flagged', 'user']
+        fields = ['id', 'game', 'x_coord', 'y_coord','flagged', 'user', 'game_code', 'opened', 'bomb_count']
 
