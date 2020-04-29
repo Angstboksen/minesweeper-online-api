@@ -139,7 +139,7 @@ def online_users(request, format=None):
             users = []
             for user in online_users:
                 specgame = list(SpectatedGame.objects.filter(user=user)).pop()
-                users.append({'user':user.first_name, 'game': specgame.game_code})
+                users.append({'user':user.first_name, 'game': specgame.game_code, 'difficulty': specgame.difficulty})
             return JsonResponse(users, safe=False)
         return JsonResponse({'content': 'You are not authorized to view this page'}, safe=False)
 
@@ -218,7 +218,6 @@ def spectated_game(request, format=None):
 
     if request.method == 'GET':
         all_games = SpectatedGame.objects.all()
-        print(token)
         if(CHECK_MASTER_TOKEN(token)):
             serializer = SpectatedGameSerializer(all_games, many=True)
             return JsonResponse(serializer.data, safe=False)
@@ -235,8 +234,6 @@ def spectated_game(request, format=None):
         if CHECK_MASTER_TOKEN(token):
             data = JSONParser().parse(request)
             serializer = SpectatedGameSerializer(data=data)
-            print(data)
-            print(serializer.is_valid())
             if serializer.is_valid():
                 serializer.save()
                 return JsonResponse(serializer.data, status=201)
@@ -282,6 +279,8 @@ def spectated_game_detail(request, slug, format=None):
         if not CHECK_MASTER_TOKEN(token):
             return HttpResponse('{"detail": "You are forbidden from editing this game"}', status=403)
         data = JSONParser().parse(request)
+        data['user'] = game.user.id
+        data['game_code'] = slug
         serializer = SpectatedGameSerializer(game, data=data)
         if serializer.is_valid():
             serializer.save()
