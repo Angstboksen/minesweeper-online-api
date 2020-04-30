@@ -138,8 +138,11 @@ def online_users(request, format=None):
             online_users = MinesweeperUser.objects.filter(online=True)
             users = []
             for user in online_users:
-                specgame = list(SpectatedGame.objects.filter(user=user)).pop()
-                users.append({'user':user.first_name, 'game': specgame.game_code, 'difficulty': specgame.difficulty})
+                try:
+                    specgame = list(SpectatedGame.objects.filter(user=user)).pop()
+                    users.append({'user':user.first_name, 'game': specgame.game_code, 'difficulty': specgame.difficulty})
+                except:
+                    users.append({'user' : user.first_name})
             return JsonResponse(users, safe=False)
         return JsonResponse({'content': 'You are not authorized to view this page'}, safe=False)
 
