@@ -41,14 +41,12 @@ def user_list(request, format=None):
             serializer = MinesweeperUserSerializer(users, many=True)
             return JsonResponse(serializer.data, safe=False)
         authuser = Token.objects.get(key=token).user
-        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         serializer = MinesweeperUserSerializer(minesweeperuser)
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'POST':
         data = JSONParser().parse(request)
-        print('New user email: ' + data['email'])
         serializer = MinesweeperUserSerializer(data=data)
         if serializer.is_valid() and CHECK_MASTER_TOKEN(token):
             serializer.save()
@@ -63,7 +61,6 @@ def user_detail(request, pk, format=None):
         user = MinesweeperUser.objects.get(pk=pk)
         token = request._auth.key
         authuser = Token.objects.get(key=token).user
-        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
     except User.DoesNotExist:
         return HttpResponse(status=404)
@@ -102,7 +99,6 @@ def game_list(request, format=None):
             return JsonResponse(serializer.data, safe=False)
 
         authuser = Token.objects.get(key=token).user
-        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         games = MinesweeperGame.objects.filter(user=minesweeperuser)
         serializer = MinesweeperGameSerializer(games, many=True)
@@ -159,7 +155,6 @@ def highscore_list(request, format=None):
             return JsonResponse(serializer.data, safe=False)
 
         authuser = Token.objects.get(key=token).user
-        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         games = MinesweeperGame.objects.filter(
             user=minesweeperuser, game_won=True)
@@ -226,7 +221,6 @@ def spectated_game(request, format=None):
             return JsonResponse(serializer.data, safe=False)
 
         authuser = Token.objects.get(key=token).user
-        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         games = SpectatedGame.objects.filter(
             user=minesweeperuser)
@@ -252,7 +246,6 @@ def spectated_game_instance(request, format=None):
     if request.method == 'POST':
         game_code = data['game_code']
         authuser = Token.objects.get(key=token).user
-        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
         games = SpectatedGame.objects.filter(
             user=minesweeperuser, game_code=game_code)
@@ -267,7 +260,6 @@ def spectated_game_detail(request, slug, format=None):
         game = SpectatedGame.objects.get(game_code=slug)
         token = request._auth.key
         authuser = Token.objects.get(key=token).user
-        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
     except SpectatedGame.DoesNotExist:
         return HttpResponse(status=404)
@@ -332,7 +324,6 @@ def spectated_coorinates_detail(request, slug, format=None):
     try:
         token = request._auth.key
         authuser = Token.objects.get(key=token).user
-        print('User email: ' + authuser.email)
         minesweeperuser = MinesweeperUser.objects.get(email=authuser.email)
     except User.DoesNotExist:
         return HttpResponse(status=404)
@@ -390,7 +381,6 @@ class CustomAuthToken(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         minesweeperuser = MinesweeperUser.objects.get(email=user.email)
-        print('User email: ' + user.email)
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
