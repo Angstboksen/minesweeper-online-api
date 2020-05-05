@@ -30,5 +30,5 @@ class SpectatedCoordinatesSerializer(serializers.ModelSerializer):
     difficulty = serializers.ReadOnlyField(source='game.difficulty')
     class Meta:
         model = SpectatedCoordinates
-        fields = ['id', 'game', 'x_coord', 'y_coord','flagged', 'user', 'game_code', 'opened', 'bomb_count', 'difficulty']
+        fields = ['id', 'game', 'x_coord', 'y_coord','flagged', 'user', 'game_code', 'opened', 'bomb_count', 'difficulty', 'gameover']
 

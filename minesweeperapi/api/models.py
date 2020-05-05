@@ -51,7 +51,7 @@ class SpectatedGame(models.Model):
 
     class Meta:
         unique_together = ['user', 'game_code']
-        ordering = ['date']
+        ordering = ['user', 'date']
 
 class SpectatedCoordinates(models.Model):
     game = models.ForeignKey('SpectatedGame', on_delete=models.CASCADE, related_name="game", blank=True)
@@ -67,5 +67,5 @@ class SpectatedCoordinates(models.Model):
     
     class Meta:
         unique_together = ['game', 'x_coord', 'y_coord']
-        ordering = ['game']
+        ordering = ['game', 'gameover']
 

@@ -360,7 +360,6 @@ def spectated_coorinates_detail(request, slug, format=None):
             serializer = SpectatedCoordinatesSerializer(coords, data=data)
         except SpectatedCoordinates.DoesNotExist:
             serializer = SpectatedCoordinatesSerializer(data=data)
-
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data)
