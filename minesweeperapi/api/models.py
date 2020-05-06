@@ -36,7 +36,7 @@ class MinesweeperGame(models.Model):
         return str(self.user) + " : " + self.difficulty + ' : ' + str(self.game_time) + ' : '+ str(self.game_won)  
 
     class Meta:
-        ordering = ['user', 'game_won', 'game_time']
+        ordering = ['user', 'difficulty', 'game_won', 'game_time']
 
 class SpectatedGame(models.Model):
     user = models.ForeignKey('MinesweeperUser', on_delete=models.CASCADE)
