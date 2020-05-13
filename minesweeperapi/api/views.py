@@ -129,8 +129,9 @@ def format_time(millis):
 def online_users(request, format=None):
 
     token = request._auth.key
+    authuser = Token.objects.get(key=token).user
     if request.method == 'GET':
-        if(CHECK_MASTER_TOKEN(token)):
+        if authuser:
             online_users = MinesweeperUser.objects.filter(online=True)
             users = []
             for user in online_users:
